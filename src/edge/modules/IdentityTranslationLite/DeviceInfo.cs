@@ -1,12 +1,13 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+using System;
+using System.Collections.Generic;
+using Microsoft.Azure.Devices.Client;
+using IdentityTranslationLite.IotHubClient;
+
 namespace IdentityTranslationLite
 {
-    using System;
-    using System.Collections.Generic;
-    using Microsoft.Azure.Devices.Client; 
-    
     public enum DeviceInfoStatus {
         New,
         Initialize,
@@ -21,7 +22,7 @@ namespace IdentityTranslationLite
         public string DeviceId;
         public DeviceInfoStatus Status;
         public string SourceModuleId;
-        public DeviceClient DeviceClient = null;
+        public IDeviceClient DeviceClient = null;
         protected List<Message> _waitingMessages;
 
         public DeviceInfo(string id)

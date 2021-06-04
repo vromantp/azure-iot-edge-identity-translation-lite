@@ -63,14 +63,14 @@
             "settings": {
               "image": "${MODULES.ptm-mqtt}",
               "createOptions": {
-                "NetworkingConfig": {
-                  "EndpointsConfig": {
-                    "host": {}
-                  }
-                },
                 "HostConfig": {
                   "NetworkMode": "host"
                 }
+              }
+            },
+            "env": {
+              "IOTEDGE_MODULEID": {
+                "value": "ptm-mqtt"
               }
             }
           },
