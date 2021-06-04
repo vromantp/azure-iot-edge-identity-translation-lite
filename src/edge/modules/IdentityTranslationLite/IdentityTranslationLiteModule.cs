@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using IdentityTranslationLite.Core;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using IdentityTranslationLite.IotHubClient;
@@ -186,8 +187,6 @@ namespace IdentityTranslationLite
                 await _moduleClient.SendEventAsync(ItmDirectMethodRequestOutputName, msg);
             }
 
-            // TODO: investigate timeout for wait on response
-
             var waitingDirectMethodCall = new TaskCompletionSource<Message>();
 
             if (!_waitingDirectMethodCalls.TryAdd(requestId, waitingDirectMethodCall))
@@ -197,11 +196,26 @@ namespace IdentityTranslationLite
 
             Console.WriteLine($"Starting wait for direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'");
 
-            Message responseMessage = await waitingDirectMethodCall.Task;
+            TimeSpan conservativeTimeout = (methodRequest.ResponseTimeout ?? TimeSpan.FromSeconds(30)).Multiply(0.75);
 
-            Console.WriteLine($"Received direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'. Responding to IoT Hub");
+            try
+            {
+                Message responseMessage = await waitingDirectMethodCall.Task.TimeoutAfter(conservativeTimeout);
+                
+                Console.WriteLine(
+                    $"Received direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'. Responding to IoT Hub");
 
-            return new MethodResponse(responseMessage.GetBytes(), 200);
+                return new MethodResponse(responseMessage.GetBytes(), 200);
+            }
+            catch (TimeoutException)
+            {
+                Console.WriteLine(
+                    $"ERROR: Did not receive a direct method response message (id: {requestId}) in time'");
+
+                _waitingDirectMethodCalls.TryRemove(requestId, out waitingDirectMethodCall);
+
+                throw;
+            }
         }
 
         public Task<MessageResponse> HandleDirectMethodResponse(Message message, object userContext)
@@ -213,11 +227,16 @@ namespace IdentityTranslationLite
             if (!_waitingDirectMethodCalls.TryGetValue(directMethodRequestId,
                 out TaskCompletionSource<Message> waitingDirectMethodCall))
             {
-                throw new NotImplementedException();
+                Console.WriteLine($"ERROR: No waiting direct method request (id: {directMethodRequestId}), so discarding message");
+            }
+            else
+            {
+                waitingDirectMethodCall.SetResult(message);
+
+                _waitingDirectMethodCalls.TryRemove(directMethodRequestId, out waitingDirectMethodCall);
             }
 
-            waitingDirectMethodCall.SetResult(message);
-
+            // Complete the message in any case
             return Task.FromResult(MessageResponse.Completed);
         }
 

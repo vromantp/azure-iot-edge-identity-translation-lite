@@ -81,5 +81,36 @@ namespace IdentityTranslationLiteUnitTests
             await Assert.ThrowsAsync<InvalidOperationException>(
                 async () => await sut.LeafDeviceDirectMethod(methodRequest, leafDeviceId));
         }
+
+        [Fact]
+        public async Task C2D_LeafDeviceDirectMethod_ResponseNotReceivedBeforeRequestTimeout_()
+        {
+            const string leafDeviceId = "LeafDevice1";
+            const string moduleDirectMethodRequestOutputName = "itmdmreqoutput";
+
+            // Arrange
+            var moduleClientMock = new Mock<IModuleClient>();
+            var leafDeviceRepoMock = new Mock<IDeviceRepository>();
+            var deviceClientMock = new Mock<IDeviceClient>();
+            leafDeviceRepoMock
+                .Setup(x => x.Get(leafDeviceId))
+                .Returns(new DeviceInfo(leafDeviceId) { DeviceClient = deviceClientMock.Object });
+
+            var sut = new IdentityTranslationLiteModule(moduleClientMock.Object, leafDeviceRepoMock.Object);
+
+            var methodRequestBody = new
+            {
+                Foo = "Bar"
+            };
+            var methodRequest = new MethodRequest("directMethodDummyName",
+                Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(methodRequestBody)),
+                responseTimeout: TimeSpan.FromSeconds(2),
+                connectionTimeout: null);
+
+            // Act + Assert
+            await Assert.ThrowsAsync<TimeoutException>(
+                async () => await sut.LeafDeviceDirectMethod(methodRequest, leafDeviceId));
+            moduleClientMock.Verify(x => x.SendEventAsync(moduleDirectMethodRequestOutputName, It.IsAny<Message>()), Times.Exactly(1));
+        }
     }
 }
