@@ -1,14 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.Devices.Client;
 using Moq;
-using IdentityTranslationLite;
-using IdentityTranslationLite.IotHubClient;
 using Newtonsoft.Json;
 using Xunit;
+using IdentityTranslationLite;
+using IdentityTranslationLite.IotHubClient;
 
 namespace IdentityTranslationLiteUnitTests
 {

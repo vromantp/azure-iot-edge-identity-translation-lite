@@ -181,6 +181,8 @@ namespace IdentityTranslationLite
             using (Message msg = new Message(methodRequest.Data))
             {
                 msg.MessageId = requestId;
+                msg.Properties["leafdeviceid"] = leafDeviceId;
+                msg.Properties["method"] = methodRequest.Name;
                 
                 Console.WriteLine($"Sending direct method request message (id: {requestId}) to leaf device '{leafDeviceId}'");
 

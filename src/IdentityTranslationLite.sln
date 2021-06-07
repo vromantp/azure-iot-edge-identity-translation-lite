@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.31321.278
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityTranslationLite", "edge\modules\IdentityTranslationLite\IdentityTranslationLite.csproj", "{AF2360A3-D17C-47A5-BFEA-AAD7FBC96861}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityTranslationLiteUnitTests", "test\IdentityTranslationLite\IdentityTranslationLiteUnitTests\IdentityTranslationLiteUnitTests.csproj", "{DF0F707E-97E2-4FEE-BC92-C62FAA91CD25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityTranslationLiteUnitTests", "test\IdentityTranslationLite\IdentityTranslationLiteUnitTests\IdentityTranslationLiteUnitTests.csproj", "{DF0F707E-97E2-4FEE-BC92-C62FAA91CD25}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mpt-mqtt-csharp", "edge\modules\mpt-mqtt-csharp\mpt-mqtt-csharp.csproj", "{BA2497DD-B970-486B-8413-E5FE4CECFE64}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{DF0F707E-97E2-4FEE-BC92-C62FAA91CD25}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF0F707E-97E2-4FEE-BC92-C62FAA91CD25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF0F707E-97E2-4FEE-BC92-C62FAA91CD25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA2497DD-B970-486B-8413-E5FE4CECFE64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA2497DD-B970-486B-8413-E5FE4CECFE64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA2497DD-B970-486B-8413-E5FE4CECFE64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA2497DD-B970-486B-8413-E5FE4CECFE64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
