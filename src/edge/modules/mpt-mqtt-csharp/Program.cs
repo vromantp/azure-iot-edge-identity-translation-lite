@@ -60,30 +60,52 @@ namespace ptm_mqtt_csharp
             MqttClient.Connect($"{ModuleId}_client");
 
             MqttClient.MqttMsgPublishReceived += MqttClientOnMqttMsgPublishReceived;
-
-            MqttClient.Subscribe(new[] {"device/#"}, new [] {MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE});
+            //Note: need to specify a QoS level for each topic
+            MqttClient.Subscribe(new[]
+            {
+                "device/+/message",
+                "device/+/directmethod/+/response"
+            }, new []
+            {
+                MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE,
+                MqttMsgBase.QOS_LEVEL_EXACTLY_ONCE
+            });
             
             Console.WriteLine("MQTT client initialized.");
         }
 
         private static Task<MessageResponse> ForwardDirectMethodRequestToLeafDevice(Message message, object usercontext)
         {
-            string leafDeviceId = message.Properties["leafdeviceid"];
-            string methodName = message.Properties["method"];
-
-            Console.WriteLine($"Received request for direct method '{methodName}' on leaf device '{leafDeviceId}'");
-
-            string topic = $"device/{leafDeviceId}/directmethod/{methodName}/request";
-
-            var mqttMsg = new
+            try
             {
-                RequestId = message.MessageId,
-                Data = JObject.Parse(Encoding.UTF8.GetString(message.GetBytes()))
-            };
-            
-            MqttClient.Publish(topic, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(mqttMsg)));
+                string leafDeviceId = message.Properties["leafdeviceid"];
+                string methodName = message.Properties["method"];
 
-            return Task.FromResult(MessageResponse.Completed);
+                var requestData = Encoding.UTF8.GetString(message.GetBytes());
+
+                Console.WriteLine($"Received request for direct method '{methodName}' on leaf device '{leafDeviceId}': {requestData}");
+                
+                var mqttMsg = new
+                {
+                    RequestId = message.MessageId,
+                    Data = !string.IsNullOrWhiteSpace(requestData) || !requestData.Equals("null") ? JObject.Parse(requestData) : null
+                };
+                var mqttMsgString = JsonConvert.SerializeObject(mqttMsg);
+
+                string topic = $"device/{leafDeviceId}/directmethod/{methodName}/request";
+
+                Console.WriteLine($"Sending direct method request message to '{topic}': {mqttMsgString}");
+
+                MqttClient.Publish(topic, Encoding.UTF8.GetBytes(mqttMsgString));
+
+                return Task.FromResult(MessageResponse.Completed);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"ERROR while forwarding direct method request message: {e.Message}");
+
+                return Task.FromResult(MessageResponse.Completed);
+            }
         }
 
         private static async void MqttClientOnMqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
@@ -96,7 +118,7 @@ namespace ptm_mqtt_csharp
             {
                 await ForwardMessageFromLeafDevice(e.Topic, dataObject);
             }
-            else if (e.Topic.Contains("/directmethod/") && e.Topic.EndsWith("/response"))
+            else if (e.Topic.Contains("/directmethod/"))
             {
                 await ForwardDirectMethodResponseFromLeafDevice(e.Topic, dataObject);
             }

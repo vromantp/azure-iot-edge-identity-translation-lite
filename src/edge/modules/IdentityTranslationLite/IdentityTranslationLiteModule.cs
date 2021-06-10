@@ -178,32 +178,36 @@ namespace IdentityTranslationLite
             Console.WriteLine($"Received direct method '{methodRequest.Name}' for leaf device '{leafDeviceId}': {methodRequest.DataAsJson}");
 
             var requestId = Guid.NewGuid().ToString();
-            using (Message msg = new Message(methodRequest.Data))
-            {
-                msg.MessageId = requestId;
-                msg.Properties["leafdeviceid"] = leafDeviceId;
-                msg.Properties["method"] = methodRequest.Name;
-                
-                Console.WriteLine($"Sending direct method request message (id: {requestId}) to leaf device '{leafDeviceId}'");
-
-                await _moduleClient.SendEventAsync(ItmDirectMethodRequestOutputName, msg);
-            }
 
             var waitingDirectMethodCall = new TaskCompletionSource<Message>();
 
+            // Note: register as waiting call before sending out the actual event, to avoid timing issues
             if (!_waitingDirectMethodCalls.TryAdd(requestId, waitingDirectMethodCall))
             {
                 throw new NotImplementedException();
             }
 
-            Console.WriteLine($"Starting wait for direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'");
-
-            TimeSpan conservativeTimeout = (methodRequest.ResponseTimeout ?? TimeSpan.FromSeconds(30)).Multiply(0.75);
-
             try
             {
+                using (Message msg = new Message(methodRequest.Data))
+                {
+                    msg.MessageId = requestId;
+                    msg.Properties["leafdeviceid"] = leafDeviceId;
+                    msg.Properties["method"] = methodRequest.Name;
+
+                    Console.WriteLine(
+                        $"Sending direct method request message (id: {requestId}) to leaf device '{leafDeviceId}'");
+
+                    await _moduleClient.SendEventAsync(ItmDirectMethodRequestOutputName, msg);
+                }
+
+                Console.WriteLine(
+                    $"Starting wait for direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'");
+
+                TimeSpan conservativeTimeout =
+                    (methodRequest.ResponseTimeout ?? TimeSpan.FromSeconds(30)).Multiply(0.75);
                 Message responseMessage = await waitingDirectMethodCall.Task.TimeoutAfter(conservativeTimeout);
-                
+
                 Console.WriteLine(
                     $"Received direct method response message (id: {requestId}) from leaf device '{leafDeviceId}'. Responding to IoT Hub");
 
@@ -212,7 +216,16 @@ namespace IdentityTranslationLite
             catch (TimeoutException)
             {
                 Console.WriteLine(
-                    $"ERROR: Did not receive a direct method response message (id: {requestId}) in time'");
+                    $"ERROR: Did not receive a direct method response message (id: {requestId}) in time");
+
+                _waitingDirectMethodCalls.TryRemove(requestId, out waitingDirectMethodCall);
+
+                throw;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(
+                    $"ERROR: Error while trying to send direct method request message (id: {requestId})': {e.Message}");
 
                 _waitingDirectMethodCalls.TryRemove(requestId, out waitingDirectMethodCall);
 
