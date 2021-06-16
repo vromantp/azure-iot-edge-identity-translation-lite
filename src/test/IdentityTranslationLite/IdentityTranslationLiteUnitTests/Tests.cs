@@ -12,6 +12,13 @@ namespace IdentityTranslationLiteUnitTests
 {
     public class Tests
     {
+        /// <summary>
+        /// Tests the <see cref="IdentityTranslationLiteModule"/> C2D DirectMethod invocation flow:
+        /// - Module receives DirectMethod handler call destined for a particular leaf device
+        /// - Sends out a IoT Edge message to a separate module
+        /// - Pauses its execution to wait for an incoming IoT Edge message with the response from the leaf device
+        /// - Unpauses the DirectMethod handler call to return a synchronous response
+        /// </summary>
         [Fact]
         public async Task C2D_LeafDeviceDirectMethod()
         {
@@ -55,6 +62,11 @@ namespace IdentityTranslationLiteUnitTests
             moduleClientMock.Verify(x => x.SendEventAsync(moduleDirectMethodRequestOutputName, It.IsAny<Message>()), Times.Exactly(1));
         }
 
+        /// <summary>
+        /// Tests the <see cref="IdentityTranslationLiteModule"/> C2D DirectMethod invocation flow, in the
+        /// case where the module receives a DirectMethod handler call for an unknown device.
+        /// This should result in an exception being thrown.
+        /// </summary>
         [Fact]
         public async Task C2D_LeafDeviceDirectMethod_UnknownDevice_ThrowsException()
         {
@@ -63,7 +75,6 @@ namespace IdentityTranslationLiteUnitTests
             // Arrange
             var moduleClientMock = new Mock<IModuleClient>();
             var leafDeviceRepoMock = new Mock<IDeviceRepository>();
-            var deviceClientMock = new Mock<IDeviceClient>();
 
             var sut = new IdentityTranslationLiteModule(moduleClientMock.Object, leafDeviceRepoMock.Object);
 
@@ -80,8 +91,14 @@ namespace IdentityTranslationLiteUnitTests
                 async () => await sut.LeafDeviceDirectMethod(methodRequest, leafDeviceId));
         }
 
+        /// <summary>
+        /// Tests the <see cref="IdentityTranslationLiteModule"/> C2D DirectMethod invocation flow, in the
+        /// case where the module does not receive a DirectMethod invocation response message from a particular
+        /// leaf device in time.
+        /// This should result in an exception being thrown, which will be forwarded to IoT Hub
+        /// </summary>
         [Fact]
-        public async Task C2D_LeafDeviceDirectMethod_ResponseNotReceivedBeforeRequestTimeout_()
+        public async Task C2D_LeafDeviceDirectMethod_ResponseNotReceivedBeforeRequestTimeout_ThrowsException()
         {
             const string leafDeviceId = "LeafDevice1";
             const string moduleDirectMethodRequestOutputName = "itmdmreqoutput";

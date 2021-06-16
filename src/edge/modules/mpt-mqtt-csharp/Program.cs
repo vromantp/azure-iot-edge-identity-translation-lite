@@ -60,7 +60,7 @@ namespace ptm_mqtt_csharp
             MqttClient.Connect($"{ModuleId}_client");
 
             MqttClient.MqttMsgPublishReceived += MqttClientOnMqttMsgPublishReceived;
-            //Note: need to specify a QoS level for each topic
+            //Note: need to specify a QoS level for _each_ topic
             MqttClient.Subscribe(new[]
             {
                 "device/+/message",
@@ -110,7 +110,7 @@ namespace ptm_mqtt_csharp
 
         private static async void MqttClientOnMqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            Console.WriteLine($"Received message on topic '{e.Topic}'");
+            Console.WriteLine($"Received message on MQTT topic '{e.Topic}'");
 
             var dataObject = JObject.Parse(Encoding.UTF8.GetString(e.Message));
 
@@ -129,7 +129,8 @@ namespace ptm_mqtt_csharp
         }
 
         /// <summary>
-        /// Listens to messages with topic "device/{device_id}/message" from the broker
+        /// Handles D2C-messages from MQTT broker topic "device/{device_id}/message", sent out by
+        /// a particular leaf device
         /// </summary>
         private static async Task ForwardMessageFromLeafDevice(string topic, JObject data)
         {
@@ -160,8 +161,8 @@ namespace ptm_mqtt_csharp
         }
 
         /// <summary>
-        /// Listens to messages with topic "device/{device_id}/directmethod/{method_name}/response" from the broker, which
-        /// are responses to earlier direct method request messages
+        /// Handles messages from MQTT broker topic "device/{device_id}/directmethod/{method_name}/response", which
+        /// are responses from a particular leaf device to earlier direct method request messages
         /// </summary>
         private static async Task ForwardDirectMethodResponseFromLeafDevice(string topic, JObject data)
         {

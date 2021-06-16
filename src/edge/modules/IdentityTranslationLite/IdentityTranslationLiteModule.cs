@@ -145,6 +145,7 @@ namespace IdentityTranslationLite
 
                     // Register generic method for handling cloud-2-device direct method calls to this leaf device
                     await leafDevice.DeviceClient.SetMethodDefaultHandlerAsync(LeafDeviceDirectMethod, leafDeviceId);
+                    // TODO: register other leafdevice-specific event handlers here (D2C-messages, device twin properties, ...)
                 }
                 else if ((response.ResultCode == 401) || (response.ResultCode == 403) || (response.ResultCode == 404)) // Unauthorized, Forbidden, Not Found
                 {
@@ -206,6 +207,8 @@ namespace IdentityTranslationLite
 
                 TimeSpan conservativeTimeout =
                     (methodRequest.ResponseTimeout ?? TimeSpan.FromSeconds(30)).Multiply(0.75);
+
+                // Task will complete when a directmethod response message is received (asynchronously) from the leaf device
                 Message responseMessage = await waitingDirectMethodCall.Task.TimeoutAfter(conservativeTimeout);
 
                 Console.WriteLine(

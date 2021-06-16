@@ -1,3 +1,9 @@
+#
+# Continuously listens on the local MQTT broker for DirectMethod request messages sent out by
+#  by the IdentityTranslationLite module, and responds automatically by sending out a DirectMethod response
+#  to the MQTT broker (so the IdentityTranslationLite module can handle it and respond to IoT Hub)
+#
+
 import json
 import random
 import paho.mqtt.client as mqtt
